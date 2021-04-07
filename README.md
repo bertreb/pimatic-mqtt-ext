@@ -19,3 +19,9 @@ The brokerId is coming from pimatic-mqtt configuration.
       "offMessage": "OFF"
 }
 ```
+
+### Actions
+The action syntax
+```
+shelly <MqttRGB device> to [<hex color code> | <color name>]
+```
