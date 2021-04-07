@@ -1,0 +1,54 @@
+{
+  "name": "pimatic-mqtt-ext",
+  "description": "MQTT extension support for Pimatic",
+  "author_name": "Bert Gierveld",
+  "author": "Bert Gierveld",
+  "author_url": "https://github.com/bertreb",
+  "npmUser": "bertreb",
+  "main": "mqtt-ext",
+  "files": [
+    "mqtt-ext.coffee",
+    "mqtt-ext-config-schema.coffee",
+    "device-config-schema.coffee",
+    "color_schema.json",
+    "app",
+    "README.md",
+    "LICENSE"
+  ],
+  "version": "0.9.0",
+  "homepage": "http://github.com/bertreb/pimatic-mqtt-ext",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bertreb/pimatic-mqtt-ext.git"
+  },
+  "configSchema": "mqtt-ext-config-schema.coffee",
+  "peerDependencies": {
+    "pimatic": ">=0.9.0 <1.0.0"
+  },
+  "dependencies": {
+    "color": "^0.8.0",
+    "lodash": "^4.17.21"
+  },
+  "engines": {
+    "node": ">= 4",
+    "npm": ">= 2"
+  },
+  "bugs": {
+    "url": "https://github.com/bertreb/pimatic-mqtt-ext/issues"
+  },
+  "keywords": [
+    "pimatic",
+    "mqtt",
+    "subscribe",
+    "publish",
+    "publish/subscribe",
+    "IoT"
+  ],
+  "license": "AGPL-3.0",
+  "maintainers": [
+    {
+      "name": "bertreb",
+      "url": "https://github.com/bertreb"
+    }
+  ]
+}
