@@ -235,11 +235,16 @@ module.exports = (env) ->
         @mqttClient.on('message', @colorMessageHandler = (topic, message) =>
           if @colorStateTopic == topic
             try
-              _message = JSON.parse(message)
+              if typeof message is 'object' and Object.keys(message).length != 0
+                _message = message
+              else
+                _message = JSON.parse(message)
               if _message.red? and _message.green? and _message.blue?
                 hexColor = "#{_message.red},#{_message.green},#{_message.blue}"
                 env.logger.debug "ColorState message received: " + hexColor
-                @_updateState({color: Boolean hexColor, mode: COLOR_MODE})
+                @_updateState({color: hexColor, mode: COLOR_MODE})
+              if _message.white?
+                @_updateState({color: '', mode: COLOR_MODE})
               if _message.ison?
                 env.logger.debug "Ison message received: " + _message.ison
                 @_updateState({power: Boolean _message.ison})
