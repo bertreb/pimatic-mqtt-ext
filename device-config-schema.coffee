@@ -8,24 +8,26 @@ module.exports = {
         description: "The brokerId of the MQTT broker which can be set for each device. Use 'default' for default Broker"
         type: "string"
         default: "default"
+      deviceId:
+        description: "The Shelly DeviceId"
+        type: "string"
+        required: true
       onoffTopic:
         description: "Topic used for sending on/off message"
         type: "string"
-        required: true
+        default: "shellies/shellyrgbw2-<deviceid>/color/0/command"
       colorTopic:
         description: "Topic used for sending RGB values"
         type: "string"
-        required: true
+        default: "shellies/shellyrgbw2-<deviceid>/color/0/set"
       onoffStateTopic:
         description: "Topic for receiving on/off messages"
         type: "string"
-        default: null
-        required: false
+        default: "shellies/shellyrgbw2-<deviceid>/color/0"
       colorStateTopic:
         description: "Topic used for receiving RGB values"
         type: "string"
-        default: null
-        required: false
+        default: "shellies/shellyrgbw2-<deviceid>/color/0/status"
       onMessage:
         description: "Payload for sending 'on' command"
         type: "string"

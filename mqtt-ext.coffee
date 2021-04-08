@@ -21,13 +21,11 @@ module.exports = (env) ->
 
     init: (app, @framework, @config) =>
 
-      env.logger.debug "Keys: " + JSON.stringify(_.keys(colorSchema),null,2)
-
-      deviceConfigDef = require('./device-config-schema.coffee')
+      @deviceConfigDef = require('./device-config-schema.coffee')
       plugin = @
 
       @framework.deviceManager.registerDeviceClass 'MqttRGB',
-        configDef: deviceConfigDef.MqttRGB
+        configDef: @deviceConfigDef.MqttRGB
         createCallback: (config, lastState) -> return new MqttRGB(plugin, config, lastState)
 
       @framework.ruleManager.addActionProvider(new MqttRGBActionProvider(@framework))
@@ -46,20 +44,6 @@ module.exports = (env) ->
         else
           env.logger.warn 'your plugin could not find the mobile-frontend. No gui will be available'
 
-    onConnect: () =>
-      @Connector = new MqttConnection(@mqttClient)
-      @Connector.on "event", (data) =>
-      #  env.logger.debug(data)
-        @emit "event", (data)
-      @Connector.on "ready", =>
-        env.logger.debug "Connector ready"
-        @ready = true
-      @Connector.on "error", =>
-        @ready = false
-      @framework.on('destroy', (context) =>
-        env.logger.info("Plugin finish...")
-        @Connector.removeAllListeners()
-      )
 
   class BaseLedLight extends env.devices.Device
 
@@ -159,9 +143,9 @@ module.exports = (env) ->
           else
             hexColor = Color(state.color).hexString()
         #console.log "hexColor:", hexColor
-        @_setPower state.power
-        @_setAttribute 'brightness', state.brightness
-        @_setAttribute 'color', hexColor
+        @_setPower(state.power) if state.power?
+        @_setAttribute('brightness', state.brightness) if state.brightness?
+        @_setAttribute('color', hexColor) if state.color?
 
     getPower: -> Promise.resolve @power
     getColor: -> Promise.resolve @color
@@ -193,12 +177,25 @@ module.exports = (env) ->
       assert(mqttPlugin)
       #assert(mqttPlugin.brokers[@config.brokerId])
 
+      shellyDeviceId = @config.deviceId
+      @onoffStateTopic = @config.onoffStateTopic
+      if @onoffStateTopic.indexOf("<deviceid>")>=0
+        @onoffStateTopic = @onoffStateTopic.replace("<deviceid>", shellyDeviceId)
+      @colorStateTopic = @config.colorStateTopic
+      if @colorStateTopic.indexOf("<deviceid>")>=0
+        @colorStateTopic = @colorStateTopic.replace("<deviceid>", shellyDeviceId)
+      @onoffTopic = @config.onoffTopic
+      if @onoffTopic.indexOf("<deviceid>")>=0
+        @onoffTopic = @onoffTopic.replace("<deviceid>", shellyDeviceId)
+      @colorTopic = @config.colorTopic
+      if @colorTopic.indexOf("<deviceid>")>=0
+        @colorTopic = @colorTopic.replace("<deviceid>", shellyDeviceId)
+
       @device = @
       @name = @config.name
       @id = @config.id
       @_dimlevel = lastState?.dimlevel?.value or 0
 
-      @mqttClient = null
       @mqttPlugin = @plugin.framework.pluginManager.getPlugin('mqtt')
       unless @plugin.framework.pluginManager.isActivated('mqtt') and @mqttPlugin?
         env.logger.debug "MQTT not found or not activated"
@@ -219,9 +216,9 @@ module.exports = (env) ->
       for key, value of lastState
         initState[key] = value.value
 
-      if @config.onoffStateTopic
-        @mqttClient.on('message', (topic, message) =>
-          if @config.onoffStateTopic == topic
+      if @onoffStateTopic
+        @mqttClient.on('message', @onoffMessageHandler = (topic, message) =>
+          if @onoffStateTopic == topic
             switch message.toString()
               when @config.onMessage
                 env.logger.debug "onMessage received"
@@ -233,27 +230,36 @@ module.exports = (env) ->
                 env.logger.debug "#{@name} with id:#{@id}: Message is not harmony with onMessage or offMessage in config.json or with default values"
         )
 
-      if @config.colorStateTopic
-        @mqttClient.on('message', (topic, message) =>
-          if @config.colorStateTopic == topic
-            _message = JSON.parse(message)
-            colorString = "rgb(#{_message.red},#{_message.green},#{_message.blue})"
-            #colorString = "rgb(#{message.toString()})"
-            env.logger.debug "ColorState message received: " + colorString
-            setColor(colorString)
+      if @colorStateTopic
+        @mqttClient.on('message', @colorMessageHandler = (topic, message) =>
+          if @colorStateTopic == topic
+            try
+              _message = JSON.parse(message)
+              if _message.red? and _message.green? and _message.blue?
+                hexColor = "#{_message.red},#{_message.green},#{_message.blue}"
+                env.logger.debug "ColorState message received: " + hexColor
+                @_updateState({color: Boolean hexColor})
+              if _message.ison?
+                env.logger.debug "Ison message received: " + _message.ison
+                @_updateState({power: Boolean _message.ison})
+              if _message.gain?
+                env.logger.debug "Gain message received: " + _message.gain
+                @_updateState({brightness: Number _message.gain})
+            catch e
+              env.logger.debug "Invalid JSON message received, topic: " + topic + ", message: " + message        
         )
 
       super(initState)
       if @power is true then @turnOn() else @turnOff()
 
     onConnect: () ->
-      if @config.onoffStateTopic
-        @mqttClient.subscribe(@config.onoffTopic) #{ qos: @config.qos }
-        env.logger.debug "Suscribed to: " + @config.onoffStateTopic
+      if @onoffStateTopic
+        @mqttClient.subscribe(@onoffStateTopic) #{ qos: @config.qos }
+        env.logger.debug "Suscribed to: " + @onoffStateTopic
 
-      if @config.colorStateTopic
-        @mqttClient.subscribe(@config.colorTopic) #{ qos: @config.qos }
-        env.logger.debug "Suscribed to: " + @config.colorStateTopic
+      if @colorStateTopic
+        @mqttClient.subscribe(@colorStateTopic) #{ qos: @config.qos }
+        env.logger.debug "Suscribed to: " + @colorStateTopic
 
     _updateState: (attr) ->
       state = _.assign @getState(), attr
@@ -261,13 +267,13 @@ module.exports = (env) ->
 
     turnOn: ->
       @_updateState power: true
-      @mqttClient.publish(@config.onoffTopic, @config.onMessage, { qos: @config.qos })
+      @mqttClient.publish(@onoffTopic, @config.onMessage, { qos: @config.qos })
       env.logger.debug "turnOn message sent"
       Promise.resolve()
 
     turnOff: ->
       @_updateState power: false
-      @mqttClient.publish(@config.onoffTopic, @config.offMessage, { qos: @config.qos })
+      @mqttClient.publish(@onoffTopic, @config.offMessage, { qos: @config.qos })
       env.logger.debug "turnOff message sent"
       Promise.resolve()
 
@@ -289,7 +295,7 @@ module.exports = (env) ->
         gain: currentState.brightness
       message = JSON.stringify(_message)
 
-      @mqttClient.publish(@config.colorTopic, message, { qos: @config.qos })
+      @mqttClient.publish(@colorTopic, message, { qos: @config.qos })
       env.logger.debug "Color message sent: " + message
       Promise.resolve()
 
@@ -302,7 +308,7 @@ module.exports = (env) ->
         gain: currentState.brightness
       message = JSON.stringify(_message)
 
-      @mqttClient.publish(@config.colorTopic, message, { qos: @config.qos })
+      @mqttClient.publish(@colorTopic, message, { qos: @config.qos })
       env.logger.debug "White message sent: " + message
       Promise.resolve()
 
@@ -318,16 +324,18 @@ module.exports = (env) ->
         gain: currentState.brightness
       message = JSON.stringify(_message)
 
-      @mqttClient.publish(@config.colorTopic, message, { qos: @config.qos })
+      @mqttClient.publish(@colorTopic, message, { qos: @config.qos })
       env.logger.debug "Brightness message sent: " + message
       Promise.resolve()
 
     destroy: () ->
-      if @config.onoffStateTopic
-        @mqttClient.unsubscribe(@config.onoffStateTopic)
+      if @onoffStateTopic
+        @mqttClient.unsubscribe(@onoffStateTopic)
+        @mqttClient.removeListener('message', @onoffMessageHandler)
 
-      if @config.colorStateTopic
-        @mqttClient.unsubscribe(@config.colorStateTopic)
+      if @colorStateTopic
+        @mqttClient.unsubscribe(@colorStateTopic)
+        @mqttClient.removeListener('message', @colorMessageHandler)
 
       super()
 
