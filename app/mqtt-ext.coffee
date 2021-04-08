@@ -26,7 +26,7 @@ $(document).on 'templateinit', (event) ->
       @colorPicker = $(elements).find('.light-color')
       @colorPicker.spectrum
         preferredFormat: 'hex'
-        showButtons: false
+        showButtons: true
         allowEmpty: true
         move: (color) =>
           return @colorPicker.val(null).change() unless color

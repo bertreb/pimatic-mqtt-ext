@@ -15,7 +15,7 @@ module.exports = {
       onoffTopic:
         description: "Topic used for sending on/off message"
         type: "string"
-        default: "shellies/shellyrgbw2-<deviceid>/color/0/command"
+        default: "shellies/shellyrgbw2-<deviceid>/color/0/set"
       colorTopic:
         description: "Topic used for sending RGB values"
         type: "string"
@@ -31,11 +31,11 @@ module.exports = {
       onMessage:
         description: "Payload for sending 'on' command"
         type: "string"
-        default: "ON"
+        default: "on"
       offMessage:
         description: "Payload for sending 'off' command"
         type: "string"
-        default: "OFF"
+        default: "off"
       qos:
         description: "MQTT publish QOS for color and on/off payloads on state and set topics"
         type: "number"

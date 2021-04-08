@@ -29,6 +29,7 @@ module.exports = (env) ->
         createCallback: (config, lastState) -> return new MqttRGB(plugin, config, lastState)
 
       @framework.ruleManager.addActionProvider(new MqttRGBActionProvider(@framework))
+      @framework.ruleManager.addPredicateProvider(new MqttRGBPredicateProvider(@framework))
 
       # wait till all plugins are loaded
       @framework.on "after init", =>
@@ -267,14 +268,20 @@ module.exports = (env) ->
 
     turnOn: ->
       @_updateState power: true
-      @mqttClient.publish(@onoffTopic, @config.onMessage, { qos: @config.qos })
-      env.logger.debug "turnOn message sent"
+      _message =
+        turn: @config.onMessage
+      message = JSON.stringify(_message)
+      @mqttClient.publish(@onoffTopic, message, { qos: @config.qos })
+      env.logger.debug "turnOn message sent: " + message
       Promise.resolve()
 
     turnOff: ->
       @_updateState power: false
-      @mqttClient.publish(@onoffTopic, @config.offMessage, { qos: @config.qos })
-      env.logger.debug "turnOff message sent"
+      _message =
+        turn: @config.offMessage
+      message = JSON.stringify(_message)
+      @mqttClient.publish(@onoffTopic, message, { qos: @config.qos })
+      env.logger.debug "turnOff message sent: " + message
       Promise.resolve()
 
     toggle: ->
@@ -338,6 +345,74 @@ module.exports = (env) ->
         @mqttClient.removeListener('message', @colorMessageHandler)
 
       super()
+
+  class MqttRGBPredicateProvider extends env.predicates.PredicateProvider
+
+    presets: [
+      {
+        name: "switch turned on/off"
+        input: "{device} is turned on"
+      }
+    ]
+
+    constructor: (@framework) ->
+
+    # ### parsePredicate()
+    parsePredicate: (input, context) ->  
+
+      supportedMqttRgbClasses = ["MqttRGB"]
+      switchDevices = _(@framework.deviceManager.devices).values().filter(
+        (device) => device.config.class in supportedMqttRgbClasses
+      ).value()
+
+      device = null
+      state = null
+      match = null
+
+      stateAcFilter = (v) => v.trim() isnt 'is switched' 
+      M(input, context)
+        .matchDevice(switchDevices, (next, d) =>
+          next.match([' is', ' is turned', ' is switched'], acFilter: stateAcFilter, type: 'static')
+            .match([' on', ' off'], param: 'state', type: 'select', (next, s) =>
+              # Already had a match with another device?
+              if device? and device.id isnt d.id
+                context?.addError(""""#{input.trim()}" is ambiguous.""")
+                return
+              assert d?
+              assert s in [' on', ' off']
+              device = d
+              state = s.trim() is 'on'
+              match = next.getFullMatch()
+          )
+        )
+ 
+      # If we have a match
+      if match?
+        assert device?
+        assert state?
+        assert typeof match is "string"
+        # and state as boolean.
+        return {
+          token: match
+          nextInput: input.substring(match.length)
+          predicateHandler: new MqttRGBPredicateHandler(device, state)
+        }
+      else
+        return null
+
+  class MqttRGBPredicateHandler extends env.predicates.PredicateHandler
+
+    constructor: (@device, @state) ->
+      @dependOnDevice(@device)
+    setup: ->
+      @stateListener = (s) => @emit 'change', (s is @state)
+      @device.on 'power', @stateListener
+      super()
+    getValue: -> @device.getUpdatedAttributeValue('power').then( (s) => (s is @state) )
+    destroy: -> 
+      @device.removeListener "power", @stateListener
+      super()
+    getType: -> 'state'
 
   class MqttRGBActionProvider extends env.actions.ActionProvider
       constructor: (@framework) ->
