@@ -128,7 +128,7 @@ module.exports = (env) ->
       #console.log "POWER" , powerState
       unless @power is powerState
         @power = powerState
-        @emit "power", if powerState then 'on' else 'off'
+        @emit "power", powerState
 
     _updateState: (err, state) ->
       env.logger.error err if err
@@ -144,7 +144,7 @@ module.exports = (env) ->
           else
             hexColor = Color(state.color).hexString()
         #console.log "hexColor:", hexColor
-        @_setPower(state.power) if state.power?
+        @_setAttribute('power', state.power) if state.power?
         @_setAttribute('brightness', state.brightness) if state.brightness?
         @_setAttribute('color', hexColor) if state.color?
 
@@ -239,7 +239,7 @@ module.exports = (env) ->
               if _message.red? and _message.green? and _message.blue?
                 hexColor = "#{_message.red},#{_message.green},#{_message.blue}"
                 env.logger.debug "ColorState message received: " + hexColor
-                @_updateState({color: Boolean hexColor})
+                @_updateState({color: Boolean hexColor, mode: COLOR_MODE})
               if _message.ison?
                 env.logger.debug "Ison message received: " + _message.ison
                 @_updateState({power: Boolean _message.ison})
