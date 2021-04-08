@@ -20,6 +20,9 @@ The brokerId is coming from pimatic-mqtt configuration.
       "offMessage": "OFF"
 }
 ```
+
+You need to provide the deviceId of the ShellyRGBW2. For the 6 topic/message fields the default values can be used for the ShellyRGBW2.
+
 ### Actions
 The action syntax
 ```
