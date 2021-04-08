@@ -217,6 +217,7 @@ module.exports = (env) ->
       for key, value of lastState
         initState[key] = value.value
 
+      ###
       if @onoffStateTopic
         @mqttClient.on('message', @onoffMessageHandler = (topic, message) =>
           if @onoffStateTopic == topic
@@ -230,6 +231,7 @@ module.exports = (env) ->
               else
                 env.logger.debug "#{@name} with id:#{@id}: Message is not harmony with onMessage or offMessage in config.json or with default values"
         )
+      ###
 
       if @colorStateTopic
         @mqttClient.on('message', @colorMessageHandler = (topic, message) =>
@@ -278,8 +280,8 @@ module.exports = (env) ->
       _message =
         turn: @config.onMessage
       message = JSON.stringify(_message)
-      @mqttClient.publish(@onoffTopic, message, { qos: @config.qos })
-      env.logger.debug "turnOn message sent: " + message
+      @mqttClient.publish(@colorTopic, message, { qos: @config.qos })
+      env.logger.debug "Message sent, topic: " + @colorTopic+ ", message: " + message
       Promise.resolve()
 
     turnOff: ->
@@ -287,8 +289,8 @@ module.exports = (env) ->
       _message =
         turn: @config.offMessage
       message = JSON.stringify(_message)
-      @mqttClient.publish(@onoffTopic, message, { qos: @config.qos })
-      env.logger.debug "turnOff message sent: " + message
+      @mqttClient.publish(@colorTopic, message, { qos: @config.qos })
+      env.logger.debug "Message sent, topic: " + @colorTopic+ ", message: " + message
       Promise.resolve()
 
     toggle: ->
@@ -310,7 +312,7 @@ module.exports = (env) ->
       message = JSON.stringify(_message)
 
       @mqttClient.publish(@colorTopic, message, { qos: @config.qos })
-      env.logger.debug "Color message sent: " + message
+      env.logger.debug "Message sent, topic: " + @colorTopic+ ", message: " + message
       Promise.resolve()
 
     setWhite: ->
