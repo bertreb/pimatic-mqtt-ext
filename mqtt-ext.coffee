@@ -347,11 +347,11 @@ module.exports = (env) ->
     destroy: () ->
       if @onoffStateTopic
         @mqttClient.unsubscribe(@onoffStateTopic)
-        @mqttClient.removeListener('message', @onoffMessageHandler)
+        @mqttClient.removeListener('message', @onoffMessageHandler) if @onoffMessageHandler?
 
       if @colorStateTopic
         @mqttClient.unsubscribe(@colorStateTopic)
-        @mqttClient.removeListener('message', @colorMessageHandler)
+        @mqttClient.removeListener('message', @colorMessageHandler) if @colorMessageHandler?
 
       super()
 
