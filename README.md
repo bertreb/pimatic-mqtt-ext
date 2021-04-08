@@ -11,6 +11,7 @@ The brokerId is coming from pimatic-mqtt configuration.
 ```
 {
       "brokerId": "default"
+      "deviceId": "Shelly deviceId"
       "onoffTopic": "myOnOffTopic"
       "colorTopic": "myColorSetTopic"
       "onoffStateTopic": "myOnOffStateTopic"
@@ -19,7 +20,6 @@ The brokerId is coming from pimatic-mqtt configuration.
       "offMessage": "OFF"
 }
 ```
-
 ### Actions
 The action syntax
 ```
