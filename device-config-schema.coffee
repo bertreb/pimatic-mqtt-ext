@@ -21,12 +21,12 @@ module.exports = {
         type: "string"
         default: "shellies/shellyrgbw2-<deviceid>/color/0/set"
       effectOn:
-        description: "The effect when switchinh on"
+        description: "The effect when switching on"
         type: "number"
         enum: [0,1,2,3,4]
         default: 2
       effectOff:
-        description: "The effect when switchinh on"
+        description: "The effect when switching off"
         type: "number"
         enum: [0,1,2,3,4]
         default: 0
