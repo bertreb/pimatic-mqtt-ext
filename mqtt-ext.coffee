@@ -192,6 +192,11 @@ module.exports = (env) ->
       if @colorTopic.indexOf("<deviceid>")>=0
         @colorTopic = @colorTopic.replace("<deviceid>", shellyDeviceId)
 
+      @effectOn = @config.effectOn ? 2
+      @effectOff = @config.effectOff ? 0
+      @onMessage = @config.onMessage ? "on"
+      @offMessage = @config.offMessage ? "off"
+
       @device = @
       @name = @config.name
       @id = @config.id
@@ -278,7 +283,8 @@ module.exports = (env) ->
     turnOn: ->
       @_updateState power: true
       _message =
-        turn: @config.onMessage
+        turn: @onMessage
+        effect: @effectOn
       message = JSON.stringify(_message)
       @mqttClient.publish(@colorTopic, message, { qos: @config.qos })
       env.logger.debug "Message sent, topic: " + @colorTopic+ ", message: " + message
@@ -287,7 +293,8 @@ module.exports = (env) ->
     turnOff: ->
       @_updateState power: false
       _message =
-        turn: @config.offMessage
+        turn: @offMessage
+        effect: @effectOff
       message = JSON.stringify(_message)
       @mqttClient.publish(@colorTopic, message, { qos: @config.qos })
       env.logger.debug "Message sent, topic: " + @colorTopic+ ", message: " + message

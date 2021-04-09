@@ -13,6 +13,8 @@ The brokerId is coming from pimatic-mqtt configuration.
       "brokerId": "default"
       "deviceId": "Shelly deviceId"
       "onoffTopic": "myOnOffTopic"
+      "effectOn": [0,1,2,3,4] default 2
+      "effectOff": [0,1,2,3,4] default 0
       "colorTopic": "myColorSetTopic"
       "onoffStateTopic": "myOnOffStateTopic"
       "colorStateTopic": "myColorStateTopic"

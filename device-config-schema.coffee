@@ -20,6 +20,16 @@ module.exports = {
         description: "Topic used for sending RGB values"
         type: "string"
         default: "shellies/shellyrgbw2-<deviceid>/color/0/set"
+      effectOn:
+        description: "The effect when switchinh on"
+        type: "number"
+        enum: [0,1,2,3,4]
+        default: 2
+      effectOff:
+        description: "The effect when switchinh on"
+        type: "number"
+        enum: [0,1,2,3,4]
+        default: 0
       onoffStateTopic:
         description: "Topic for receiving on/off messages"
         type: "string"

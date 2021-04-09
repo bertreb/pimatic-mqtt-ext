@@ -1,7 +1,10 @@
 
 .light-container {}
 
-.light-label-container, .light-color-container, .light-brightness-container {
+.light-label-container {
+    float: left;
+}
+.light-color-container, .light-brightness-container {
     float: left;
 }
 
@@ -10,7 +13,6 @@
 }
 
 .light-label-container{
-  width: 20%;
   margin-right: 5px;
 }
 
@@ -25,7 +27,9 @@
 }
 
 .light-power-container {
-  /*margin-right: 20%;*/
+  width: 20%;
+  float: right;
+  /*margin-right: 1%;*/
   /*margin-top: -20px;*/
 }
 
